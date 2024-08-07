@@ -35,30 +35,6 @@ class ProductController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    //  public function store(Request $request)
-    //  {
-    //     $validateData = $request->validate([
-    //         'name'=>'required|string',
-    //         'details'=>'required|string'
-    //     ]);
-    //     $product = Product::create([
-    //         'name'=> $validateData['name'],
-    //         'details'=>$validateData['details'],
-    //     ]);
-
-    //     if($product){
-    //         return response()->json([
-    //             'message'=>'Product added successfully',
-    //             'product'=>$product,
-    //         ], 201);
-    //     } else{
-    //         return response()->json([
-    //             'message'=>'Failed to create product',
-    //         ]);
-    //     }
-
-        
-    //  }
     public function store(Request $request): JsonResponse
     {
         // dd();
@@ -76,7 +52,6 @@ class ProductController extends Controller
    
         $product = Product::create($input);
    
-        // return $this->sendResponse(new ProductResource($product), 'Product created successfully.');
 
         return response()->json($product);
     } 
@@ -92,10 +67,12 @@ class ProductController extends Controller
         $product = Product::find($id);
   
         if (is_null($product)) {
-            return $this->sendError('Product not found.');
+            // return $this->sendError('Product not found.');
+            return response()->json(['error'=>'product not found'], 404);
         }
    
-        return $this->sendResponse(new ProductResource($product), 'Product retrieved successfully.');
+        // return $this->sendResponse(new ProductResource($product), 'Product retrieved successfully.');
+        return response()->json($product);
     }
     
     /**
@@ -105,30 +82,39 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Product $product): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
-        $input = $request->all();
-   
-        $validator = Validator::make($input, [
-            'name' => 'required',
-            'details' => 'required'
-        ]);
-   
-        if($validator->fails()){
-            return $this->sendError('Validation Error.', $validator->errors());       
-        }
-   
-        $product->name = $input['name'];
-        $product->details = $input['details'];
-        $product->save();
-   
-        return $this->sendResponse(new ProductResource($product), 'Product updated successfully.');
+        // Find the product by ID
+        $product = Product::find($id);
 
-        // return response()->json([
-        //     'message'=>'product updated successfully',
-        //     'product'=>$product
-        // ]);
+        // Check if the product exists
+        if (!$product) {
+            return response()->json(['error' => 'Product not found.'], 404);
+        }
+
+        // Validate the request input
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'details' => 'required|string',
+            'category_id' => ['required', 'exists:categories,id'], // If category_id is used
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Update product details
+        $product->name = $request->input('name');
+        $product->details = $request->input('details');
+        if ($request->has('category_id')) {
+            $product->category_id = $request->input('category_id'); // If using category_id
+        }
+        $product->save();
+
+        return response()->json(['message' => 'Product updated successfully.', 'product' => $product], 200);
     }
+
+
    
     /**
      * Remove the specified resource from storage.
