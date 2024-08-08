@@ -37,7 +37,7 @@ class CategoryController extends Controller
         } else{
             return response()->json([
                 'message'=>'Failed to create category',
-            ]);
+            ], 500);
         }
     }
 
@@ -48,7 +48,7 @@ class CategoryController extends Controller
         return response()->json($category);
     }
 
-    public function update(Request $request, Category $category)
+    public function update(Request $request, $id)
     {
         $input = $request->validate([
             'name'=>['required', 'string', 'max:255'],
@@ -64,7 +64,7 @@ class CategoryController extends Controller
         ]);
     }
 
-    public function destroy(Category $category)
+    public function destroy(Category $category, $id)
     {
         $category = Category::findOrFail($id);
         $category->delete();
